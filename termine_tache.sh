@@ -38,6 +38,13 @@ gawk -F':' -v g_nomtache="${NOM_TACHE}" -v g_fin="${FIN}" -v g_en_cours="${EN_CO
 			sub($4, g_fin, $4);
 			# on doit passer duree à la difference des deux
 			sub($5, $4 - $3, $5);
+			# s il s agit du premier lancement ($6 vaut PREMIER_LANCEMENT)
+			# le cumul $6 vaut la différence calculée dans le champ préc.
+			#
+			# sinon le champ de cumul $6 vaut lui même 
+			# auquel on ajoute  la différence calculée précéd. ds chp 5.
+			sub(/[0-9]+/, $6 + $4 - $3, $6)	
+			sub(/PREMIER_LANCEMENT/, $4 - $3, $6)		
 			print $0;
 		}
 		$1!=g_nomtache { 
@@ -47,18 +54,3 @@ gawk -F':' -v g_nomtache="${NOM_TACHE}" -v g_fin="${FIN}" -v g_en_cours="${EN_CO
 
 }
 
-function interface(){
-. taches.conf
-# arrêter une tâche?
-# 1) mettre EN_COURS à NON.
-# 2) mettre FIN à date +%s
-# 3) mettre TOT à FIN-DEBUT ou
-# 3bis) ajouter FIN-DEBUT à TOT 
-
-echo "nom tâche à arrêter?"
-read NOM_TACHE
-EN_COURS="NON"
-FIN="$(date +%s)"
-
-}
-interface

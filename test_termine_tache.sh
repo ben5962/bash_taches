@@ -46,6 +46,11 @@ function setUp(){
 FICHIER_TACHES_SIMPLIFIE="essai.txt"
 FICHIER_TACHES="autre_essai.txt"
 AUTRE_FICHIER_TACHES_SIMPLIFIE="encore_un.txt"
+FICHIER_TEST_DU_CUMUL_DERNIER_CHAMP="unptitdernier.txt"
+
+cat <<OOO >"${FICHIER_TEST_DU_CUMUL_DERNIER_CHAMP}" 
+essai:NON:1321869222:1321869223:1:1
+OOO
 
 cat <<VRAIEFIN >"${AUTRE_FICHIER_TACHES_SIMPLIFIE}"
 autre essai:OUI:1321869831:EN_COURS:GENERE_SUR_DEMANDE:PREMIER_LANCEMENT
@@ -66,6 +71,7 @@ function tearDown(){
 rm -f $FICHIER_TACHES_SIMPLIFIE
 rm -f $FICHIER_TACHES
 rm -f $AUTRE_FICHIER_TACHES_SIMPLIFIE
+rm -f $FICHIER_TEST_DU_CUMUL_DERNIER_CHAMP
 }
 
 
@@ -97,7 +103,7 @@ assertEquals "$ATTENDU" "$TRAITEMENT"
 
 test_arrete_tache(){
 	# test avec fichier d'une seule ligne
-ATTENDU="essai:NON:1321869222:1321869223:1:PREMIER_LANCEMENT"
+ATTENDU="essai:NON:1321869222:1321869223:1:1"
 # la variable fichier_taches doit exister dans l'env de test.
 assertEquals "1" "$(test -z "${FICHIER_TACHES_SIMPLIFIE}"; echo "$?")"  
 NOM_TACHE="essai"
@@ -123,5 +129,30 @@ assertEquals "$ATTENDU" "$TRAITEMENT"
 
 
 # le pb du cumul des durees reste posé
+# si premier lancement(le $5 vaut PREMIER_LANCEMENT), le cumul ($5) vaut la différence calculée 
+ATTENDU="essai:NON:1321869222:1321869223:1:1"
+# la variable fichier_taches doit exister dans l'env de test.
+assertEquals "1" "$(test -z "${FICHIER_TACHES_SIMPLIFIE}"; echo "$?")"  
+NOM_TACHE="essai"
+FIN="1321869223"
+#"$(date +%s)"
+EN_COURS="NON"
+TRAITEMENT="$(arrete_tache <${FICHIER_TACHES_SIMPLIFIE})"
+assertEquals "$ATTENDU" "$TRAITEMENT"
+#  ok. reste à propager les valeurs attendues
+# FAIT
+
+# si pas premier lancement (le $5 vaut pas PREMIER_LANCEMENT),
+# le cumul ($5) doit valoir la somme entre lui-meme et le champ précédent.
+ATTENDU="essai:NON:1321869222:1321869223:1:2"
+# la variable fichier_taches doit exister dans l'env de test.
+assertEquals "1" "$(test -z "${FICHIER_TEST_DU_CUMUL_DERNIER_CHAMP}"; echo "$?")"  
+NOM_TACHE="essai"
+FIN="1321869223"
+#"$(date +%s)"
+EN_COURS="NON"
+TRAITEMENT="$(arrete_tache <${FICHIER_TEST_DU_CUMUL_DERNIER_CHAMP})"
+assertEquals "$ATTENDU" "$TRAITEMENT"
+
 }	
 . shunit2
